@@ -11,6 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "cannon": "^0.6.2",
+    "event-emitter": "^0.3.4",
     "keycode": "^2.1.2",
     "ndarray": "^1.0.18",
     "three": "^0.78.0",

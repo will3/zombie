@@ -1,22 +1,21 @@
 var mesher = require('../voxel/mesher');
 var ndarray = require('ndarray');
 
-var BlockSheet = function(image, frames) {
-  this.image = image || null;
-
+var BlockSheet = function() {
   this.elementNeedsUpdate = false;
 
   this.object = new THREE.Object3D();
   this.mesh = new THREE.Mesh();
   this.object.add(this.mesh);
 
+  this.materialType = 'basic';
   this.material = null;
 
   // frames, palette
   this.blocksData = null;
   this.geometries = [];
 
-  this.frames = frames || 1;
+  this.frames = 1;
   this.frame = 0;
   this.frameInterval = [];
   this.defaultFrameInterval = 500;
@@ -27,6 +26,8 @@ var BlockSheet = function(image, frames) {
   this.physics = null;
   this.camera = null;
   this.scene = null;
+
+  this.autoFaceCamera = true;
 };
 
 BlockSheet.prototype.onAttach = function(app) {
@@ -37,7 +38,7 @@ BlockSheet.prototype.onAttach = function(app) {
 
 BlockSheet.prototype.tick = function(dt) {
   if (this.elementNeedsUpdate) {
-    this.updateElements();
+    this.updateElement();
     this.elementNeedsUpdate = false;
   }
 
@@ -52,35 +53,22 @@ BlockSheet.prototype.tick = function(dt) {
     var geometry = this.geometries[this.frame];
     if (geometry == null) {
       geometry = mesher(this.blocksData.chunks[this.frame]);
+      this.geometries[this.frame] = geometry;
     }
 
     this.mesh.geometry = geometry;
   }
 
-  // var dir =
-  //   new THREE.Vector3().subVectors(this.object.position, this.camera.position).normalize();
-
-  // var forward = new THREE.Vector3(0, 0, 1).applyEuler(this.camera.rotation);
-
-  // var cameraRight = new THREE.Vector3().crossVectors(dir, forward);
-  // var cameraUp = new THREE.Vector3(0, 1, 0).applyEuler(this.camera.rotation);
-
-  // this.object.up.copy(cameraUp);
-  this.object.lookAt(this.camera.position);
+  if (this.autoFaceCamera) {
+    this.object.lookAt(this.camera.position);
+  }
 };
 
-BlockSheet.prototype.updateElements = function() {
+BlockSheet.prototype.updateElement = function() {
   this.dispose();
-
-  this.blocksData = this.imageToBlocks(this.image, this.frames);
-  var scale = 1 / this.image.height;
-  this.object.scale.set(scale, scale, scale);
-  this.center = new THREE.Vector3(-this.image.width / this.frames / 2, -this.image.height / 2, 0.5);
-  this.mesh.position.copy(this.center);
-
   this.updateMaterial();
-
   this.mesh.material = this.material;
+  this.mesh.position.copy(this.center);
 };
 
 BlockSheet.prototype.dispose = function() {
@@ -105,10 +93,26 @@ BlockSheet.prototype.updateMaterial = function() {
       self.material.materials.push(null);
       return;
     }
-    self.material.materials.push(new THREE.MeshBasicMaterial({
-      color: color
-    }));
+
+    if (self.materialType === 'lambert') {
+      self.material.materials.push(new THREE.MeshLambertMaterial({
+        color: color
+      }));
+    } else {
+      self.material.materials.push(new THREE.MeshBasicMaterial({
+        color: color
+      }));
+    }
+
   });
+};
+
+BlockSheet.prototype.loadImage = function(image, frames) {
+  this.frames = frames;
+  this.blocksData = this.imageToBlocks(image, frames);
+  var scale = 1 / image.height;
+  this.object.scale.set(scale, scale, scale);
+  this.center = new THREE.Vector3(-image.width / frames / 2, -image.height / 2, 0.5);
 };
 
 BlockSheet.prototype.imageToBlocks = function(image, frames) {

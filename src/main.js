@@ -7,8 +7,15 @@ document.body.appendChild(renderer.domElement);
 
 var scene = new THREE.Scene();
 
+var ambientLight = new THREE.AmbientLight(0x666666);
+var directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+directionalLight.position.set(0.5, 1.0, 0.3);
+
+scene.add(ambientLight);
+scene.add(directionalLight);
+
 var camera = new THREE.PerspectiveCamera(
-  60,
+  45,
   window.innerWidth / window.innerHeight,
   0.1,
   1000);
@@ -48,13 +55,12 @@ function animate() {
   app.tick(dt);
   render();
   requestAnimationFrame(animate);
-
-  dragCamera.rotation.y += 0.01;
 };
 
 var Physics = require('./utils/physics');
 var Zombie = require('./components/zombie');
 var DragCamera = require('./components/dragcamera');
+var Turrent = require('./components/turrent');
 var spriteSheet;
 var blockSheet;
 var dragCamera;
@@ -63,6 +69,9 @@ loadAssets(function() {
 
   app.container.camera = camera;
   app.container.scene = scene;
+
+  var componentsByType = require('./utils/componentsbytype')(app);
+  app.container.componentsByType = componentsByType;
 
   // Set up input
   var input = require('./utils/input')();
@@ -81,18 +90,23 @@ loadAssets(function() {
 
   app.container.images = images;
 
-  var zombie = new Zombie();
-  scene.add(zombie.object);
-  app.attach(zombie);
+  var num = 20;
+  for (var i = 0; i < num; i++) {
+    var zombie = new Zombie();
+    scene.add(zombie.object);
+    app.attach(zombie);
 
-  var zombie = new Zombie();
-  scene.add(zombie.object);
-  zombie.object.position.x = 2;
-  zombie.object.position.z = 2;
-  app.attach(zombie);
+    zombie.object.position.x = (Math.random() - 0.5) * 10;
+    zombie.object.position.z = (Math.random() - 0.5) * 10;
+  }
 
   dragCamera = DragCamera();
   app.attach(dragCamera);
 
+  // var turrent = new Turrent();
+  // scene.add(turrent.object);
+  // turrent.object.scale.set(1 / 12, 1 / 12, 1 / 12);
+  // app.attach(turrent);
+  
   animate();
 });

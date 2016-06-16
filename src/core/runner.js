@@ -1,6 +1,9 @@
+var ee = require('event-emitter');
+
 var Runner = function() {
   this.map = {};
   this.container = {};
+  this.events = ee();
 };
 
 Runner.prototype.attach = function(component) {
@@ -12,10 +15,14 @@ Runner.prototype.attach = function(component) {
   if (component.onAttach != null) {
     component.onAttach(this);
   }
+
+  this.events.emit('attach', component);
 };
 
 Runner.prototype.dettach = function(component) {
   delete this.map[component._id];
+
+  this.events.emit('dettach', component);
 };
 
 Runner.prototype.tick = function(dt) {
